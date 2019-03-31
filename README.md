@@ -8,7 +8,7 @@
 ## Installation
 ```sh
 $ git clone https://github.com/sogou/SMRCToolkit.git
-$ cd mrc-toolkit
+$ cd SMRCToolkit
 $ pip install [-e] .
 ```
 Option *-e* makes your installation **editable**, i.e., it links it to your source directory
