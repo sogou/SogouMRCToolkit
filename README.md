@@ -108,7 +108,7 @@ All of the codes are provided using built-in models running on different dataset
 |R-Net | 79.3/70.8 | 79.5/71.1  |
 |BiDAF++ | 78.6/69.2 | -/-  |
 |FusionNet | 81.0/72.0 | 82.5/74.1  |
-|QANet | 79.3/69.9 | 82.7/73.6  |
+|QANet | 80.8/71.8 | 82.7/73.6  |
 |BERT-Base | 88.3/80.6 | 88.5/80.8 |
 
 ### F1/EM score on SQuAD 2.0 dev set
