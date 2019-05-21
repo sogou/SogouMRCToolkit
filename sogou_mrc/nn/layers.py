@@ -21,26 +21,31 @@ class Layer(object):
 
 
 class Highway(Layer):
-    def __init__(self, gate_activation=tf.nn.relu,trans_activation=tf.nn.sigmoid,hidden_units=0,keep_prob=1.0,name="highway"):
+    def __init__(self,
+                 affine_activation=tf.nn.relu,
+                 trans_gate_activation=tf.nn.sigmoid,
+                 hidden_units=0,
+                 keep_prob=1.0,
+                 name="highway"):
         super(Highway, self).__init__(name)
 
-        self.gate_activation = gate_activation
-        self.trans_activation = trans_activation
-        self.gate_layer = None
-        self.trans_layer = None
+        self.affine_activation = affine_activation
+        self.trans_gate_activation = trans_gate_activation
+        self.affine_layer = None
+        self.trans_gate_layer = None
         self.dropout = Dropout(keep_prob)
         if hidden_units > 0:
-            self.gate_layer = tf.keras.layers.Dense(hidden_units, activation=self.gate_activation)
-            self.trans_layer = tf.keras.layers.Dense(hidden_units, activation=self.trans_activation)
+            self.affine_layer = tf.keras.layers.Dense(hidden_units, activation=self.affine_activation)
+            self.trans_gate_layer = tf.keras.layers.Dense(hidden_units, activation=self.trans_gate_activation)
 
     def __call__(self, x, training=True):
-        if self.gate_layer is None:
+        if self.trans_gate_layer is None:
             hidden_units = x.shape.as_list()[-1]
-            self.gate_layer = tf.keras.layers.Dense(hidden_units, activation=self.gate_activation)
-            self.trans_layer = tf.keras.layers.Dense(hidden_units, activation=self.trans_activation)
+            self.affine_layer = tf.keras.layers.Dense(hidden_units, activation=self.affine_activation)
+            self.trans_gate_layer = tf.keras.layers.Dense(hidden_units, activation=self.trans_gate_activation)
 
-        gate = self.gate_layer(x)
-        trans = self.dropout(self.trans_layer(x), training=training)
+        gate = self.trans_gate_layer(x)
+        trans = self.dropout(self.affine_layer(x), training=training)
         return gate * trans + (1. - gate) * x
 
 
