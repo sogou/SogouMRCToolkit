@@ -62,7 +62,7 @@ model = DrQA(vocab, word_embedding, features=feature_transformer.features,\
 model.compile()
 model.train_and_evaluate(train_batch_generator, eval_batch_generator, evaluator, epochs=40, eposides=2)
 ```
-All of the codes are provided using built-in models running on different datasets in the examples. You can check these for details.
+All of the codes are provided using built-in models running on different datasets in the [examples](./examples/). You can check these for details. [Example of model saving and loading](./doc/model_save_load.md).
 
 ## Modules
 1. `data`

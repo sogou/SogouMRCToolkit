@@ -128,6 +128,19 @@ class Trainer(object):
                         best_save_path = best_saver.save(model.session, best_save_path, global_step=eposide_id)
                         logging.info("- Found new best model, saving in {}".format(best_save_path))
 
+    @staticmethod
+    def inference(model, batch_generator, steps):
+        global_step = tf.train.get_or_create_global_step()
+        final_output = defaultdict(list)
+        for _ in range(steps):
+            eval_batch = batch_generator.next()
+            eval_batch["training"] = False
+            feed_dict = {ph: eval_batch[key] for key, ph in model.input_placeholder_dict.items() if key in eval_batch and key not in ['answer_start','answer_end','is_impossible']}
+            output = model.session.run(model.output_variable_dict, feed_dict=feed_dict)
+            for key in output.keys():
+                final_output[key] += [v for v in output[key]]
+        return final_output
+
 
     @staticmethod
     def _evaluate(model, batch_generator, evaluator, model_path):
