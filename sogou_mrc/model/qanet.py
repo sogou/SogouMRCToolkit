@@ -78,7 +78,8 @@ class QANET(BaseModel):
 
         char_cnn = Conv1DAndMaxPooling(self.char_filters,self.kernel_size1,padding='same',activation=tf.nn.relu)
         embedding_dense = tf.keras.layers.Dense(self.filters)
-        highway = Highway(gate_activation=tf.nn.relu,trans_activation=tf.nn.tanh,hidden_units=self.filters,keep_prob=self.keep_prob)
+        highway = Highway(affine_activation=tf.nn.relu, trans_gate_activation=tf.nn.sigmoid,
+                          hidden_units=self.filters, keep_prob=self.keep_prob)
 
         context_char_repr = tf.reshape(char_cnn(context_char_embedding),[-1,max_context_len,self.char_filters]) # B*CL*CF
         context_repr = highway(dropout(embedding_dense(tf.concat([context_word_embedding,context_char_repr],-1)), self.training),self.training) # B*CL*F
