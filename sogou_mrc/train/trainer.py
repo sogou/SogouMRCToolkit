@@ -146,7 +146,6 @@ class Trainer(object):
     def _evaluate(model, batch_generator, evaluator):
         # Evaluate for one epoch on dev set
         batch_generator.init()
-        model.session.run(model.eval_metric_init_op)
         eval_instances = batch_generator.get_instances()
 
         eval_num_steps = (len(
