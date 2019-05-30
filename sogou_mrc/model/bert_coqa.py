@@ -15,11 +15,11 @@ VERY_NEGATIVE_NUMBER = -1e29
 
 
 class BertCoQA(BaseModel):
-    def __init__(self, vocab=None, bert_dir='', answer_verificatioin=True):
+    def __init__(self, vocab=None, bert_dir='', answer_verification=True):
         super(BertCoQA, self).__init__(vocab)
         self.bert_dir = bert_dir
         self.activation = 'relu'
-        self.answer_verification = answer_verificatioin
+        self.answer_verification = answer_verification
         self.beta = 100
         self.n_layers = 2
         self._build_graph()
@@ -52,41 +52,14 @@ class BertCoQA(BaseModel):
 
         rationale_logits = None
 
-        if self.answer_verificatioin:
+        if self.answer_verification:
             with tf.variable_scope("rationale"):
                 rationale_logits = self.multi_linear_layer(final_hidden_matrix, self.n_layers, hidden_size, 1,
                                                            activation=self.activation)  # batch*seq_len, 1
             rationale_logits = tf.nn.sigmoid(rationale_logits)  # batch*seq_len, 1
             rationale_logits = tf.reshape(rationale_logits, [batch_size, seq_length])  # batch, seq_len
-            segment_mask = tf.cast(self.segment_ids, tf.float32)  # batch, seq_len
-            # add question rep
-        if self.answer_verificatioin:
-            with tf.variable_scope("answer_logits"):
-                logits = self.multi_linear_layer(final_hidden_matrix, self.n_layers, hidden_size, 2,
-                                                 activation=self.activation)
-            logits = tf.reshape(logits, [batch_size, seq_length, 2])
-            logits = tf.transpose(logits, [2, 0, 1])
-
-            unstacked_logits = tf.unstack(logits, axis=0)
-            (start_logits, end_logits) = (unstacked_logits[0], unstacked_logits[1])
-            if rationale_logits != None:
-                rationale_logits = rationale_logits * segment_mask
-                start_logits = start_logits * rationale_logits
-                end_logits = end_logits * rationale_logits
-
-            # print(unk_yes_no_logits)
-            with tf.variable_scope("unk_yes_no"):
-                unk_yes_no_logits = self.multi_linear_layer(pooled_output, self.n_layers, hidden_size, 3,
-                                                            activation="relu")
-            unstacked_logits1 = tf.unstack(unk_yes_no_logits, axis=1)
-            unk_logits, yes_logits, no_logits = unstacked_logits1
-
-            unk_logits = tf.expand_dims(unk_logits, 1)
-            yes_logits = tf.expand_dims(yes_logits, 1)
-            no_logits = tf.expand_dims(no_logits, 1)
-        else:
-            if rationale_logits == None:
-                raise ValueError("this output design based on rationale logits")
+            segment_mask = tf.cast(self.segment_ids, tf.float32)  # batch, seq_len      
+          
             final_hidden = final_hidden * tf.expand_dims(rationale_logits, 2)
             final_hidden_matrix = tf.reshape(final_hidden, [batch_size * seq_length, hidden_size])
             with tf.variable_scope("answer_logits"):
@@ -124,17 +97,27 @@ class BertCoQA(BaseModel):
 
             yes_logits = tf.expand_dims(yes_logits, 1)
             no_logits = tf.expand_dims(no_logits, 1)
+            # add question rep
+        else:
+            with tf.variable_scope("answer_logits"):
+                logits = self.multi_linear_layer(final_hidden_matrix, self.n_layers, hidden_size, 2,
+                                                 activation=self.activation)
+            logits = tf.reshape(logits, [batch_size, seq_length, 2])
+            logits = tf.transpose(logits, [2, 0, 1])
 
-        if self.answer_verificatioin:
-            segment_mask = tf.cast(self.segment_ids, tf.float32)  # batch, seq_len
-            rationale_positions = self.rationale_mask
-            alpha = 0.25
-            gamma = 2.
-            rationale_positions = tf.cast(rationale_positions, tf.float32)
-            rationale_loss = -alpha * ((1 - rationale_logits) ** gamma) * rationale_positions * tf.log(
-                rationale_logits + 1e-8) - (1 - alpha) * (rationale_logits ** gamma) * (
-                                     1 - rationale_positions) * tf.log(1 - rationale_logits + 1e-8)
-            rationale_loss = tf.reduce_sum(rationale_loss * segment_mask) / tf.reduce_sum(segment_mask)
+            unstacked_logits = tf.unstack(logits, axis=0)
+            (start_logits, end_logits) = (unstacked_logits[0], unstacked_logits[1])
+        
+            # print(unk_yes_no_logits)
+            with tf.variable_scope("unk_yes_no"):
+                unk_yes_no_logits = self.multi_linear_layer(pooled_output, self.n_layers, hidden_size, 3,
+                                                            activation="relu")
+            unstacked_logits1 = tf.unstack(unk_yes_no_logits, axis=1)
+            unk_logits, yes_logits, no_logits = unstacked_logits1
+
+            unk_logits = tf.expand_dims(unk_logits, 1)
+            yes_logits = tf.expand_dims(yes_logits, 1)
+            no_logits = tf.expand_dims(no_logits, 1)
 
         input_mask0 = tf.cast(self.input_mask, tf.float32)
         masked_start_logits = start_logits * input_mask0 + (1 - input_mask0) * VERY_NEGATIVE_NUMBER
@@ -165,7 +148,16 @@ class BertCoQA(BaseModel):
             new_end_logits + VERY_NEGATIVE_NUMBER * (1 - tf.cast(new_end_masks, tf.float32)), axis=1)
         end_loss = tf.reduce_mean(-(end_log_score - end_log_norm))
 
-        if self.answer_verificatioin:
+        if self.answer_verification:
+            segment_mask = tf.cast(self.segment_ids, tf.float32)  # batch, seq_len
+            rationale_positions = self.rationale_mask
+            alpha = 0.25
+            gamma = 2.
+            rationale_positions = tf.cast(rationale_positions, tf.float32)
+            rationale_loss = -alpha * ((1 - rationale_logits) ** gamma) * rationale_positions * tf.log(
+                rationale_logits + 1e-8) - (1 - alpha) * (rationale_logits ** gamma) * (
+                                     1 - rationale_positions) * tf.log(1 - rationale_logits + 1e-8)
+            rationale_loss = tf.reduce_sum(rationale_loss * segment_mask) / tf.reduce_sum(segment_mask)
             total_loss = (start_loss + end_loss) / 2.0 + rationale_loss * self.beta
         else:
             total_loss = (start_loss + end_loss) / 2.0
