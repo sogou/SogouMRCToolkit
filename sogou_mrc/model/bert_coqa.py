@@ -19,8 +19,6 @@ class BertCoQA(BaseModel):
         super(BertCoQA, self).__init__(vocab)
         self.bert_dir = bert_dir
         self.activation = 'relu'
-        self.output_design = 1 if not answer_verificatioin else 2
-        self.select_candidate_tokens = answer_verificatioin  # if not answer_verificatioin else 2
         self.answer_verification = answer_verificatioin
         self.beta = 100
         self.n_layers = 2
@@ -54,7 +52,7 @@ class BertCoQA(BaseModel):
 
         rationale_logits = None
 
-        if self.select_candidate_tokens:
+        if self.answer_verificatioin:
             with tf.variable_scope("rationale"):
                 rationale_logits = self.multi_linear_layer(final_hidden_matrix, self.n_layers, hidden_size, 1,
                                                            activation=self.activation)  # batch*seq_len, 1
@@ -62,7 +60,7 @@ class BertCoQA(BaseModel):
             rationale_logits = tf.reshape(rationale_logits, [batch_size, seq_length])  # batch, seq_len
             segment_mask = tf.cast(self.segment_ids, tf.float32)  # batch, seq_len
             # add question rep
-        if self.output_design == 1:
+        if self.answer_verificatioin:
             with tf.variable_scope("answer_logits"):
                 logits = self.multi_linear_layer(final_hidden_matrix, self.n_layers, hidden_size, 2,
                                                  activation=self.activation)
@@ -127,7 +125,7 @@ class BertCoQA(BaseModel):
             yes_logits = tf.expand_dims(yes_logits, 1)
             no_logits = tf.expand_dims(no_logits, 1)
 
-        if self.select_candidate_tokens:
+        if self.answer_verificatioin:
             segment_mask = tf.cast(self.segment_ids, tf.float32)  # batch, seq_len
             rationale_positions = self.rationale_mask
             alpha = 0.25
@@ -167,7 +165,7 @@ class BertCoQA(BaseModel):
             new_end_logits + VERY_NEGATIVE_NUMBER * (1 - tf.cast(new_end_masks, tf.float32)), axis=1)
         end_loss = tf.reduce_mean(-(end_log_score - end_log_norm))
 
-        if self.select_candidate_tokens:
+        if self.answer_verificatioin:
             total_loss = (start_loss + end_loss) / 2.0 + rationale_loss * self.beta
         else:
             total_loss = (start_loss + end_loss) / 2.0
