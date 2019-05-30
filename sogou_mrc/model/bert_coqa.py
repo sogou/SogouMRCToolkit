@@ -96,8 +96,7 @@ class BertCoQA(BaseModel):
             yes_logits, no_logits = unstacked_logits1
 
             yes_logits = tf.expand_dims(yes_logits, 1)
-            no_logits = tf.expand_dims(no_logits, 1)
-            # add question rep
+            no_logits = tf.expand_dims(no_logits, 1)         
         else:
             with tf.variable_scope("answer_logits"):
                 logits = self.multi_linear_layer(final_hidden_matrix, self.n_layers, hidden_size, 2,
@@ -149,7 +148,6 @@ class BertCoQA(BaseModel):
         end_loss = tf.reduce_mean(-(end_log_score - end_log_norm))
 
         if self.answer_verification:
-            segment_mask = tf.cast(self.segment_ids, tf.float32)  # batch, seq_len
             rationale_positions = self.rationale_mask
             alpha = 0.25
             gamma = 2.
