@@ -7,7 +7,7 @@ import sys
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 coqa_reader = CoQAReader(-1)
-data_folder='/search/odin/jdwu/bert_base/bert_coqa/'
+data_folder=''
 train_filename = "coqa-train-v1.0.json"
 eval_filename = 'coqa-dev-v1.0.json'
 vocab = Vocabulary(do_lowercase=True)
@@ -16,7 +16,7 @@ eval_data = coqa_reader.read(data_folder+eval_filename,'dev')
 vocab.build_vocab(train_data+eval_data)
 
 evaluator = CoQAEvaluator(data_folder+eval_filename)
-bert_dir = '/search/odin/jdwu/uncased_L-12_H-768_A-12/'
+bert_dir = 'uncased_L-12_H-768_A-12/'
 bert_data_helper = BertDataHelper(bert_dir)
 train_data = bert_data_helper.convert(train_data)
 eval_data = bert_data_helper.convert(eval_data)
