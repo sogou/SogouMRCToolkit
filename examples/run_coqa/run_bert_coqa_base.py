@@ -30,7 +30,7 @@ train_batch_generator = BatchGenerator(vocab,train_data,training=True,batch_size
 eval_batch_generator = BatchGenerator(vocab,eval_data,training=False,batch_size=8,additional_fields=['input_ids','segment_ids','input_mask','start_position','end_position',
     'question_mask','rationale_mask','yes_mask','extractive_mask','no_mask','unk_mask','qid'])
 
-model = BertCoQA(bert_dir=bert_dir,answer_verificatioin=False)
+model = BertCoQA(bert_dir=bert_dir,answer_verification=False)
 warmup_proportion = 0.1
 num_epochs = 2
 num_train_steps = int(
