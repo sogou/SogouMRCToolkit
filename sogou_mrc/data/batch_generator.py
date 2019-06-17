@@ -76,7 +76,7 @@ class BatchGenerator(object):
 
         for field in fields:
             if instance[field] is None:
-                if fields not in ('answer_start', 'answer_end'):
+                if field not in ('answer_start', 'answer_end'):
                     logging.warning('Data type of field "%s" not detected! Skip this field.', field)
                 continue
             elif isinstance(instance[field], list):
