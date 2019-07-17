@@ -68,5 +68,6 @@ test_batch_generator = BatchGenerator(vocab, eval_data, batch_size=60)
 save_dir='xxx'+'/best_weights'
 model = BiDAF(vocab)
 model.load(save_dir)
+model.session.run(tf.local_variables_initializer())
 model.inference(test_batch_generator) # inference on test data
 ```
